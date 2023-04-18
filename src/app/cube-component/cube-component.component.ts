@@ -1,4 +1,4 @@
-import { Component, ElementRef, ViewChild, AfterViewInit } from '@angular/core';
+import {Component, ElementRef, ViewChild, AfterViewInit} from '@angular/core';
 import * as THREE from 'three';
 import * as TWEEN from '@tweenjs/tween.js';
 
@@ -8,9 +8,9 @@ import * as TWEEN from '@tweenjs/tween.js';
   templateUrl: './cube-component.component.html',
   styleUrls: ['./cube-component.component.css']
 })
-export class CubeComponentComponent implements AfterViewInit{
-  @ViewChild('rendererContainer', { static: false}) rendererContainer: ElementRef | undefined;
-  renderer =  new THREE.WebGLRenderer();
+export class CubeComponentComponent implements AfterViewInit {
+  @ViewChild('rendererContainer', {static: false}) rendererContainer: ElementRef | undefined;
+  renderer = new THREE.WebGLRenderer();
   scene!: THREE.Scene;
   camera!: THREE.Camera;
   cube!: THREE.Mesh;
@@ -33,15 +33,16 @@ export class CubeComponentComponent implements AfterViewInit{
     const geometry = new THREE.BoxGeometry();
     const loader = new THREE.TextureLoader();
     const materials = [
-      new THREE.MeshBasicMaterial({ map: loader.load('assets/face-1.jpg') }),
-      new THREE.MeshBasicMaterial({ map: loader.load('assets/face-2.jpg') }),
-      new THREE.MeshBasicMaterial({ map: loader.load('assets/face-3.jpg') }),
-      new THREE.MeshBasicMaterial({ map: loader.load('assets/face-4.jpg') }),
-      new THREE.MeshBasicMaterial({ map: loader.load('assets/face-5.jpg') }),
-      new THREE.MeshBasicMaterial({ map: loader.load('assets/face-6.jpg') }),
+      new THREE.MeshBasicMaterial({map: loader.load('assets/face-1.jpg')}),
+      new THREE.MeshBasicMaterial({map: loader.load('assets/face-2.jpg')}),
+      new THREE.MeshBasicMaterial({map: loader.load('assets/face-3.jpg')}),
+      new THREE.MeshBasicMaterial({map: loader.load('assets/face-4.jpg')}),
+      new THREE.MeshBasicMaterial({map: loader.load('assets/face-5.jpg')}),
+      new THREE.MeshBasicMaterial({map: loader.load('assets/face-6.jpg')}),
     ];
 
     this.cube = new THREE.Mesh(geometry, materials);
+    this.cube.rotation.set(0, 0, 0);
     this.scene.add(this.cube);
 
     this.camera.position.z = 5;
@@ -66,7 +67,7 @@ export class CubeComponentComponent implements AfterViewInit{
   createClickableFace(faceIndex: number, position: THREE.Vector3, rotation: THREE.Euler) {
     console.log(`createClickableFace called with faceIndex: ${faceIndex}`);
     const geometry = new THREE.PlaneGeometry(0.2, 0.2);
-    const material = new THREE.MeshBasicMaterial({ color: 0xff0000, transparent: true, opacity: 0.5 });
+    const material = new THREE.MeshBasicMaterial({color: 0xff0000, transparent: true, opacity: 0.5});
     const plane = new THREE.Mesh(geometry, material);
 
     plane.position.copy(position);
@@ -116,6 +117,12 @@ export class CubeComponentComponent implements AfterViewInit{
       case 3:
         targetRotation.set(Math.PI / 2, 0, 0);
         break;
+      case 4:
+        targetRotation.set(0, 0, Math.PI / 2); // Add this case for face 5
+        break;
+      case 5:
+        targetRotation.set(0, 0, -Math.PI / 2); // Add this case for face 6
+        break;
       default:
         console.error("Invalid face index");
         return;
@@ -125,25 +132,24 @@ export class CubeComponentComponent implements AfterViewInit{
 
     console.log('targetRotation:', targetRotation);
 
-    const currentRotation = this.cube.quaternion.clone(); // Use quaternion instead of Euler angles
+    const currentQuaternion = this.cube.quaternion.clone();
     const targetQuaternion = new THREE.Quaternion().setFromEuler(targetRotation);
-    const rotationDifference = new THREE.Quaternion().multiplyQuaternions(targetQuaternion, currentRotation.clone());
+    const duration = 1000;
+    const step = 0.01;
 
-    const tween = new TWEEN.Tween({ t: 0 })
-      .to({ t: 1 }, 1000)
-      .easing(TWEEN.Easing.Quadratic.Out)
-      .onUpdate((obj) => {
-        this.cube.quaternion.copy(currentRotation).multiply(rotationDifference.clone().slerp(new THREE.Quaternion(), obj.t));
-      })
-      .onComplete(() => {
+    const animateRotation = () => {
+      if (currentQuaternion.angleTo(targetQuaternion) < step) {
+        this.cube.quaternion.copy(targetQuaternion);
         console.log('Cube rotation complete');
-      })
-      .start();
+      } else {
+        currentQuaternion.rotateTowards(targetQuaternion, step);
+        this.cube.quaternion.copy(currentQuaternion);
+        requestAnimationFrame(animateRotation);
+      }
+    };
+
+    animateRotation();
   }
-
-
-
-
 
 
 }
