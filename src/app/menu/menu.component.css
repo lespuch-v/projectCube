@@ -1,0 +1,7 @@
+.menu-container{
+  display: flex;
+  justify-content: flex-end;
+}
+ul > li{
+  list-style: none;
+}
